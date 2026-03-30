@@ -25,3 +25,20 @@ def test_warnings_expected():
 def test_recommendations_align_with_weak_areas():
     result = run_valuation(sample(cac_payback_months=50, sales_cycle_days=250))
     assert any("CAC payback" in rec for rec in result["recommendations"])
+
+
+def test_waterfall_orders_positive_then_negative_drivers():
+    result = run_valuation(sample())
+    steps = result["waterfall_steps"]
+    component_steps = [step for step in steps[1:-1]]
+    positives = [step for step in component_steps if step["delta"] > 0]
+    negatives = [step for step in component_steps if step["delta"] < 0]
+
+    if positives and negatives:
+        assert component_steps.index(positives[-1]) < component_steps.index(negatives[0])
+
+
+def test_subscore_writeups_present_for_each_area():
+    result = run_valuation(sample())
+    assert set(result["subscore_details"].keys()) == set(result["subscores"].keys())
+    assert all(detail["writeup"] for detail in result["subscore_details"].values())
